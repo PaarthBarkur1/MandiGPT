@@ -68,12 +68,23 @@ def test_commodity_prices():
     """Test commodity prices endpoint"""
     print("\n💰 Testing Commodity Prices...")
     try:
-        response = requests.get(f"{BASE_URL}/api/commodity-prices?state=Maharashtra&district=Pune&lat=18.5204&lon=73.8567&crops=Rice,Wheat,Maize")
+        # Test with commodities that are available in the API
+        response = requests.get(f"{BASE_URL}/api/commodity-prices?state=Maharashtra&district=Pune&lat=18.5204&lon=73.8567&crops=Gold,Silver,Cotton")
         if response.status_code == 200:
             data = response.json()
             print("✅ Commodity Prices Response:")
             print(json.dumps(data, indent=2))
-            return True
+            
+            # Validate response structure
+            if "commodity_prices" in data and isinstance(data["commodity_prices"], list):
+                for price_data in data["commodity_prices"]:
+                    if not all(key in price_data for key in ['commodity_name', 'current_price', 'market_location']):
+                        print("❌ Missing required fields in response")
+                        return False
+                return True
+            else:
+                print("❌ Missing or invalid commodity_prices in response")
+                return False
         else:
             print(f"❌ Commodity prices failed: {response.status_code}")
             return False
@@ -97,7 +108,40 @@ def test_crop_recommendations():
         "land_size": 2.5,
         "budget": 50000,
         "risk_tolerance": "Medium",
-        "preferred_crops": ["Rice", "Wheat", "Maize", "Sugarcane"]
+        "preferred_crops": ["Cotton"],  # Only using Cotton as it's an agricultural commodity
+        "weather": {
+            "current": {
+                "temperature": 25.0,
+                "humidity": 60.0,
+                "rainfall": 0.0,
+                "wind_speed": 10.0,
+                "pressure": 1013.25,
+                "uv_index": 5.0,
+                "cloud_cover": 50.0,
+                "date": "2025-10-28T00:00:00"
+            },
+            "forecast_7_days": [
+                {
+                    "temperature": 25.0,
+                    "humidity": 60.0,
+                    "rainfall": 0.0,
+                    "wind_speed": 10.0,
+                    "pressure": 1013.25,
+                    "uv_index": 5.0,
+                    "cloud_cover": 50.0,
+                    "date": "2025-10-28T00:00:00"
+                }
+            ]
+        },
+        "commodity_prices": [
+            {
+                "commodity_name": "Cotton",
+                "current_price": 7032.81,
+                "price_trend": "stable",
+                "market_location": "Mumbai",
+                "date": "2025-10-28T00:00:00"
+            }
+        ]
     }
     
     try:
@@ -124,12 +168,24 @@ def test_price_trends():
     """Test price trends endpoint"""
     print("\n📈 Testing Price Trends...")
     try:
-        response = requests.get(f"{BASE_URL}/api/price-trends/Rice?days=30")
+        # Test with a commodity available in the API
+        response = requests.get(f"{BASE_URL}/api/price-trends/Cotton?days=30")
         if response.status_code == 200:
             data = response.json()
             print("✅ Price Trends Response:")
             print(json.dumps(data, indent=2))
-            return True
+            
+            # Validate response structure
+            required_fields = ['commodity', 'trend', 'price_history', 'current_price']
+            if all(field in data for field in required_fields):
+                if isinstance(data['price_history'], list) and len(data['price_history']) > 0:
+                    return True
+                else:
+                    print("❌ Price history data is missing or empty")
+                    return False
+            else:
+                print("❌ Missing required fields in response")
+                return False
         else:
             print(f"❌ Price trends failed: {response.status_code}")
             return False

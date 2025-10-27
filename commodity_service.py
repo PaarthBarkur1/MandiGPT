@@ -7,87 +7,75 @@ from config import Config
 
 class CommodityService:
     def __init__(self):
-        self.api_key = Config.COMMODITY_API_KEY
-        # Using a mock service for commodity prices since real APIs require subscription
-        self.mock_prices = self._initialize_mock_prices()
-        
-    def _initialize_mock_prices(self) -> Dict[str, Dict]:
-        """Initialize mock commodity prices for Indian markets"""
-        return {
-            "Rice": {
-                "current_price": 2500,
-                "trend": "increasing",
-                "markets": ["Delhi", "Mumbai", "Kolkata", "Chennai"]
-            },
-            "Wheat": {
-                "current_price": 2200,
-                "trend": "stable",
-                "markets": ["Delhi", "Punjab", "Haryana", "UP"]
-            },
-            "Maize": {
-                "current_price": 1800,
-                "trend": "increasing",
-                "markets": ["Karnataka", "Andhra Pradesh", "Maharashtra"]
-            },
-            "Sugarcane": {
-                "current_price": 3200,
-                "trend": "stable",
-                "markets": ["UP", "Maharashtra", "Karnataka", "Tamil Nadu"]
-            },
-            "Cotton": {
-                "current_price": 6500,
-                "trend": "decreasing",
-                "markets": ["Gujarat", "Maharashtra", "Punjab", "Haryana"]
-            },
-            "Soybean": {
-                "current_price": 4200,
-                "trend": "increasing",
-                "markets": ["Madhya Pradesh", "Maharashtra", "Rajasthan"]
-            },
-            "Groundnut": {
-                "current_price": 5500,
-                "trend": "stable",
-                "markets": ["Gujarat", "Rajasthan", "Tamil Nadu"]
-            },
-            "Potato": {
-                "current_price": 1200,
-                "trend": "increasing",
-                "markets": ["UP", "West Bengal", "Punjab", "Bihar"]
-            },
-            "Onion": {
-                "current_price": 1800,
-                "trend": "decreasing",
-                "markets": ["Maharashtra", "Karnataka", "Gujarat"]
-            },
-            "Tomato": {
-                "current_price": 2500,
-                "trend": "increasing",
-                "markets": ["Karnataka", "Andhra Pradesh", "Maharashtra"]
-            }
+        self.api_key = "2f32c13d3d0c45dab283c0e19f333a7c"
+        self.base_url = "https://api.apifreaks.com/v1.0/commodity/rates/latest"
+        self.commodity_mapping = {
+            "Gold": "XAU",
+            "Crude Oil": "WTIOIL",
+            "Silver": "XAG",
+            "Natural Gas": "NGAS",
+            "Copper": "COPPER",
+            "Cotton": "COTTON"
+        }
+        self.default_markets = {
+            "Gold": ["Mumbai", "Delhi"],
+            "Crude Oil": ["Mumbai"],
+            "Silver": ["Mumbai", "Delhi"],
+            "Natural Gas": ["Mumbai"],
+            "Copper": ["Mumbai"],
+            "Cotton": ["Gujarat", "Maharashtra"]
         }
     
-    async def get_commodity_prices(self, location: Location, commodities: List[str] = None) -> List[CommodityPrice]:
-        """Get current commodity prices for specified crops"""
+    async def get_commodity_prices(self, location: Location, commodities: Optional[List[str]] = None) -> List[CommodityPrice]:
+        """Get current commodity prices for specified commodities"""
         if commodities is None:
-            commodities = list(self.mock_prices.keys())
+            commodities = list(self.commodity_mapping.keys())
         
-        prices = []
-        for commodity in commodities:
-            if commodity in self.mock_prices:
-                price_data = self.mock_prices[commodity]
-                
-                # Find the closest market to the location
-                closest_market = self._find_closest_market(location, price_data["markets"])
-                
-                prices.append(CommodityPrice(
-                    commodity_name=commodity,
-                    current_price=price_data["current_price"],
-                    price_trend=price_data["trend"],
-                    market_location=closest_market,
-                    date=datetime.now()
-                ))
+        # Filter commodities to only include those we have mappings for
+        valid_commodities = [c for c in commodities if c in self.commodity_mapping]
+        if not valid_commodities:
+            return []
+
+        # Create the symbols parameter for the API
+        symbols = [self.commodity_mapping[c] for c in valid_commodities]
         
-        return prices
+        try:
+            params = {
+                'apikey': self.api_key,
+                'updates': '1m',
+                'symbols': ','.join(symbols)
+            }
+            
+            response = requests.get(self.base_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            if not data.get('success'):
+                return []
+            
+            prices = []
+            for commodity in valid_commodities:
+                symbol = self.commodity_mapping[commodity]
+                if symbol in data['rates']:
+                    # Find the closest market to the location
+                    closest_market = self._find_closest_market(location, self.default_markets[commodity])
+                    
+                    # Determine price trend (this would need historical data for accuracy)
+                    price_trend = "stable"  # Default trend
+                    
+                    prices.append(CommodityPrice(
+                        commodity_name=commodity,
+                        current_price=data['rates'][symbol],
+                        price_trend=price_trend,
+                        market_location=closest_market,
+                        date=datetime.fromtimestamp(data['timestamp'])
+                    ))
+            
+            return prices
+            
+        except (requests.RequestException, KeyError, ValueError) as e:
+            print(f"Error fetching commodity prices: {str(e)}")
+            return []
     
     def _find_closest_market(self, location: Location, markets: List[str]) -> str:
         """Find the closest market to the given location"""
@@ -113,34 +101,49 @@ class CommodityService:
     
     async def get_price_trends(self, commodity: str, days: int = 30) -> Dict:
         """Get price trends for a commodity over specified days"""
-        if commodity not in self.mock_prices:
+        if commodity not in self.commodity_mapping:
             return {"error": "Commodity not found"}
         
-        # Generate mock trend data
-        base_price = self.mock_prices[commodity]["current_price"]
-        trend = self.mock_prices[commodity]["trend"]
-        
-        prices = []
-        for i in range(days):
-            if trend == "increasing":
-                price = base_price + (i * 10)
-            elif trend == "decreasing":
-                price = base_price - (i * 5)
-            else:  # stable
-                price = base_price + (i * 2 if i % 2 == 0 else -i * 1)
+        try:
+            # Get current price
+            params = {
+                'apikey': self.api_key,
+                'updates': '1m',
+                'symbols': self.commodity_mapping[commodity]
+            }
             
-            prices.append({
-                "date": (datetime.now() - timedelta(days=days-i)).strftime("%Y-%m-%d"),
-                "price": max(price, 500)  # Minimum price floor
-            })
-        
-        return {
-            "commodity": commodity,
-            "trend": trend,
-            "price_history": prices,
-            "current_price": base_price,
-            "price_change": prices[-1]["price"] - prices[0]["price"]
-        }
+            response = requests.get(self.base_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            if not data.get('success'):
+                return {"error": "Failed to fetch price data"}
+            
+            symbol = self.commodity_mapping[commodity]
+            current_price = data['rates'][symbol]
+            
+            # Since historical data is not available in the free tier,
+            # we'll determine trend based on current price
+            # In a production environment, you would want to use historical data API
+            trend = "stable"  # Default to stable since we can't determine trend
+            
+            prices = [{
+                "date": datetime.fromtimestamp(data['timestamp']).strftime("%Y-%m-%d"),
+                "price": current_price
+            }]
+            
+            return {
+                "commodity": commodity,
+                "trend": trend,
+                "price_history": prices,
+                "current_price": current_price,
+                "price_change": 0,  # Since we only have current price
+                "unit": data['metaData'][symbol]['unit'],
+                "quote_currency": data['metaData'][symbol]['quote']
+            }
+            
+        except (requests.RequestException, KeyError, ValueError) as e:
+            return {"error": f"Failed to fetch price trends: {str(e)}"}
     
     def get_market_analysis(self, prices: List[CommodityPrice]) -> Dict:
         """Analyze market conditions based on commodity prices"""
