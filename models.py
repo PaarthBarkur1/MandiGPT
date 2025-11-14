@@ -70,8 +70,8 @@ class AgriculturalAdvice(BaseModel):
 
 class FarmerQuery(BaseModel):
     location: Location
-    weather: WeatherForecast
-    commodity_prices: List[CommodityPrice]
+    weather: Optional[WeatherForecast] = None
+    commodity_prices: Optional[List[CommodityPrice]] = None
     budget: Optional[float] = None
     land_size: Optional[float] = None  # in hectares
     preferred_crops: Optional[List[str]] = None

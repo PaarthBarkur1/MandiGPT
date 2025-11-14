@@ -1,0 +1,148 @@
+{
+  "states": [
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal"
+  ],
+  "soil_types": [
+    {
+      "name": "Black Soil",
+      "best_crops": ["Cotton", "Sugarcane", "Chickpea"],
+      "pH": "Slightly alkaline"
+    },
+    {
+      "name": "Red Soil",
+      "best_crops": ["Groundnut", "Millets", "Pulses"],
+      "pH": "Acidic"
+    },
+    {
+      "name": "Loamy Soil",
+      "best_crops": ["Rice", "Wheat", "Vegetables"],
+      "pH": "Neutral"
+    },
+    {
+      "name": "Clayey Soil",
+      "best_crops": ["Rice", "Wheat", "Cotton"],
+      "pH": "Alkaline"
+    },
+    {
+      "name": "Sandy Soil",
+      "best_crops": ["Groundnut", "Watermelon"],
+      "pH": "Alkaline"
+    },
+    {
+      "name": "Alluvial Soil",
+      "best_crops": ["Rice", "Wheat", "Sugarcane"],
+      "pH": "Neutral"
+    }
+  ],
+  "seasons": [
+    {
+      "name": "Kharif",
+      "period": "June-October",
+      "crops": ["Rice", "Cotton", "Groundnut", "Maize"]
+    },
+    {
+      "name": "Rabi",
+      "period": "October-March",
+      "crops": ["Wheat", "Gram", "Mustard", "Linseed"]
+    },
+    {
+      "name": "Summer",
+      "period": "March-June",
+      "crops": ["Vegetables", "Watermelon", "Melon"]
+    }
+  ],
+  "commodities": [
+    "Arhar", "Bajra", "Banana", "Barley", "Bell Pepper",
+    "Bhindi", "Cabbage", "Carrot", "Cauliflower", "Chillies",
+    "Cotton", "Cucumber", "Cumin", "Fenugreek", "Garlic",
+    "Ginger", "Gram", "Grape", "Groundnut", "Honey",
+    "Jowar", "Lemon", "Linseed", "Maize", "Mango",
+    "Masur", "Methi", "Moong", "Mustard", "Onion",
+    "Orange", "Peas", "Potato", "Rice", "Sesame",
+    "Soybean", "Spinach", "Sugarcane", "Sunflower", "Tobacco",
+    "Tomato", "Turmeric", "Urad", "Watermelon", "Wheat"
+  ],
+  "districts_by_state": {
+    "Andhra Pradesh": [
+      "Guntur",
+      "West Godavari"
+    ],
+    "Gujarat": [
+      "Bharuch",
+      "Damnagar",
+      "Jambusar",
+      "Mansa(Manas Veg Yard)"
+    ]
+  },
+  "all_commodities": [
+    "Bhindi(Ladies Finger)",
+    "Cauliflower",
+    "Cotton",
+    "Dry Chillies",
+    "Green Chilli",
+    "Lemon",
+    "Maize",
+    "Methi(Leaves)",
+    "Tomato"
+  ],
+  "varieties_by_commodity": {
+    "Green Chilli": [
+      "Other"
+    ],
+    "Bhindi(Ladies Finger)": [
+      "Bhindi"
+    ],
+    "Dry Chillies": [
+      "Red"
+    ],
+    "Cotton": [
+      "Other"
+    ],
+    "Lemon": [
+      "Lemon",
+      "Other"
+    ],
+    "Methi(Leaves)": [
+      "Methi"
+    ],
+    "Tomato": [
+      "Other"
+    ],
+    "Maize": [
+      "Other"
+    ],
+    "Cauliflower": [
+      "Other"
+    ]
+  },
+  "all_grades": [
+    "FAQ"
+  ]
+}

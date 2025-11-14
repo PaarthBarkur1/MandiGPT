@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+#!/usr/bin/env python3
+"""Generate clean index.html with proper form validation"""
+
+html_content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -243,17 +246,22 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="district" class="form-label">District *</label>
-                            <select class="form-select" id="district" required>
-                                <option value="">Select District...</option>
-                            </select>
+                            <input type="text" class="form-control" id="district" placeholder="Enter district name" required>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="market" class="form-label">Market</label>
                             <input type="text" class="form-control" id="market" placeholder="Enter market name">
                         </div>
                     </div>
-                    <div class="alert alert-info small" style="margin-top: 1rem;">
-                        <i class="fas fa-info-circle"></i> <strong>Note:</strong> We'll use your district to determine weather conditions. Specific coordinates are not required.
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="latitude" class="form-label">Latitude</label>
+                            <input type="number" class="form-control" id="latitude" step="any" placeholder="e.g., 18.5204">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="longitude" class="form-label">Longitude</label>
+                            <input type="number" class="form-control" id="longitude" step="any" placeholder="e.g., 73.8567">
+                        </div>
                     </div>
                 </div>
 
@@ -394,119 +402,6 @@
             debugContent.insertBefore(logEntry, debugContent.firstChild);
         }
 
-        // State to Districts mapping (major districts only)
-        const stateDistricts = {
-            'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Anantapur', 'Chittoor', 'Kurnool', 'Kadapa'],
-            'Arunachal Pradesh': ['Papum Pare', 'Changlang', 'Lohit', 'Tawang', 'Upper Siang'],
-            'Assam': ['Kamrup', 'Nagaon', 'Sonitpur', 'Cachar', 'Barpeta', 'Jorhat', 'Golaghat', 'Sivasagar', 'Dibrugarh'],
-            'Bihar': ['Patna', 'Gaya', 'Rohtas', 'Bhojpur', 'Arwal', 'Aurangabad', 'Muzaffarpur', 'Madhubani', 'Darbhanga', 'Samastipur'],
-            'Chhattisgarh': ['Raipur', 'Durg', 'Bilaspur', 'Rajnandgaon', 'Bastar', 'Kanker', 'Jagdalpur', 'Dantewada'],
-            'Goa': ['North Goa', 'South Goa'],
-            'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Jamnagar', 'Bhavnagar', 'Junagadh', 'Anand', 'Kheda', 'Gandhinagar'],
-            'Haryana': ['Faridabad', 'Gurgaon', 'Hisar', 'Rohtak', 'Panipat', 'Ambala', 'Karnal', 'Kurukshetra', 'Sonipat', 'Yamuna Nagar'],
-            'Himachal Pradesh': ['Shimla', 'Mandi', 'Kangra', 'Solan', 'Kullu', 'Chamba', 'Bilaspur', 'Kinnaur', 'Sirmaur', 'Lahaul'],
-            'Jharkhand': ['Ranchi', 'Dhanbad', 'Giridih', 'Hazaribag', 'Dumka', 'Godda', 'Palamu', 'Singhbhum', 'Koderma', 'Deoghar'],
-            'Karnataka': ['Bangalore', 'Mysore', 'Mangalore', 'Belgaum', 'Gulbarga', 'Shimoga', 'Hassan', 'Davangere', 'Tumkur', 'Chitradurga'],
-            'Kerala': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kannur', 'Palakkad', 'Malappuram', 'Alappuzha', 'Ernakulam'],
-            'Madhya Pradesh': ['Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Raipur', 'Sagar', 'Dewas', 'Dhar', 'Shahdol'],
-            'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Aurangabad', 'Ahmednagar', 'Kolhapur', 'Solapur', 'Jalgaon', 'Akola'],
-            'Manipur': ['Imphal', 'Bishnupur', 'Thoubal', 'Senapati', 'Chandel', 'Churachandpur', 'Tamenglong', 'Ukhrul'],
-            'Meghalaya': ['Shillong', 'Khasi Hills', 'Jaintia Hills', 'Garo Hills', 'Ri-Bhoi', 'East Khasi Hills'],
-            'Mizoram': ['Aizawl', 'Lunglei', 'Saiha', 'Mamit', 'Champhai', 'Serchhip', 'Kolasib'],
-            'Nagaland': ['Kohima', 'Nagaon', 'Dimapur', 'Mon', 'Longleng', 'Tuensang', 'Wokha', 'Zunheboto'],
-            'Odisha': ['Bhubaneswar', 'Cuttack', 'Rourkela', 'Berhampur', 'Sambhalpur', 'Balasore', 'Bargarh', 'Angul', 'Bolangir'],
-            'Punjab': ['Amritsar', 'Ludhiana', 'Chandigarh', 'Patiala', 'Jalandhar', 'Bathinda', 'Mohali', 'Barnala', 'Sangrur'],
-            'Rajasthan': ['Jaipur', 'Jodhpur', 'Udaipur', 'Ajmer', 'Kota', 'Bikaner', 'Alwar', 'Sikar', 'Nagaur', 'Barmer'],
-            'Sikkim': ['Gangtok', 'East Sikkim', 'West Sikkim', 'North Sikkim', 'South Sikkim'],
-            'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Trichy', 'Salem', 'Tiruppur', 'Kanyakumari', 'Vellore', 'Cuddalore'],
-            'Telangana': ['Hyderabad', 'Secunderabad', 'Warangal', 'Karimnagar', 'Nizamabad', 'Khammam', 'Medak'],
-            'Tripura': ['Agartala', 'Udaipur', 'Ambassa', 'Kailashahar', 'Dharmanagar', 'Silchar'],
-            'Uttar Pradesh': ['Lucknow', 'Kanpur', 'Varanasi', 'Agra', 'Meerut', 'Ghaziabad', 'Allahabad', 'Aligarh', 'Bareilly', 'Indore'],
-            'Uttarakhand': ['Dehradun', 'Nainital', 'Garhwal', 'Kumaon', 'Almora', 'Chamoli', 'Bageshwar', 'Uttarkashi'],
-            'West Bengal': ['Kolkata', 'Asansol', 'Siliguri', 'Darjeeling', 'Jalpaiguri', 'Malda', 'Murshidabad', 'Midnapore', 'Bankura']
-        };
-
-        // Populate districts when state changes
-        document.getElementById('state').addEventListener('change', function() {
-            const state = this.value;
-            const districtSelect = document.getElementById('district');
-            districtSelect.innerHTML = '<option value="">Select District...</option>';
-            
-            if (state && stateDistricts[state]) {
-                stateDistricts[state].forEach(district => {
-                    const option = document.createElement('option');
-                    option.value = district;
-                    option.textContent = district;
-                    districtSelect.appendChild(option);
-                });
-            }
-        });
-
-        // District center coordinates (approximate centers for weather API)
-        const districtCoordinates = {
-            'Bangalore': {lat: 12.9716, lon: 77.5946},
-            'Pune': {lat: 18.5204, lon: 73.8567},
-            'Mumbai': {lat: 19.0760, lon: 72.8777},
-            'Nagpur': {lat: 21.1458, lon: 79.0882},
-            'Ahmednagar': {lat: 19.0901, lon: 74.7421},
-            'Nashik': {lat: 19.9975, lon: 73.7898},
-            'Aurangabad': {lat: 19.8762, lon: 75.3433},
-            'Kolhapur': {lat: 16.7050, lon: 73.7421},
-            'Dhanbad': {lat: 23.7957, lon: 86.4304},
-            'Ranchi': {lat: 23.3441, lon: 85.3096},
-            'Patna': {lat: 25.5941, lon: 85.1376},
-            'Gaya': {lat: 24.7955, lon: 84.9994},
-            'Bhopal': {lat: 23.1815, lon: 79.9864},
-            'Indore': {lat: 22.7196, lon: 75.8577},
-            'Jabalpur': {lat: 23.1815, lon: 79.9864},
-            'Lucknow': {lat: 26.8467, lon: 80.9462},
-            'Kanpur': {lat: 26.4499, lon: 80.3319},
-            'Varanasi': {lat: 25.3176, lon: 82.9739},
-            'Jaipur': {lat: 26.9124, lon: 75.7873},
-            'Jodhpur': {lat: 26.2389, lon: 73.0243},
-            'Chandigarh': {lat: 30.7333, lon: 76.8067},
-            'Ludhiana': {lat: 30.9010, lon: 75.8573},
-            'Amritsar': {lat: 31.6340, lon: 74.8723},
-            'Thiruvananthapuram': {lat: 8.5241, lon: 76.9366},
-            'Kochi': {lat: 9.9312, lon: 76.2673},
-            'Coimbatore': {lat: 11.0066, lon: 76.9655},
-            'Chennai': {lat: 13.0827, lon: 80.2707},
-            'Madurai': {lat: 9.9252, lon: 78.1198},
-            'Kolkata': {lat: 22.5726, lon: 88.3639},
-            'Guwahati': {lat: 26.1445, lon: 91.7362},
-            'Ahmedabad': {lat: 23.0225, lon: 72.5714},
-            'Vadodara': {lat: 22.3072, lon: 73.1812},
-            'Surat': {lat: 21.1458, lon: 72.9891},
-            'Gandhinagar': {lat: 23.2156, lon: 72.6369},
-            'Rajkot': {lat: 22.3039, lon: 70.8022},
-            'Hyderabad': {lat: 17.3850, lon: 78.4867},
-            'Vijayawada': {lat: 16.5062, lon: 80.6480},
-            'Visakhapatnam': {lat: 17.6869, lon: 83.2185},
-            'Nellore': {lat: 14.4426, lon: 79.9864},
-            'Guntur': {lat: 16.3067, lon: 80.4365},
-            'Telangana': {lat: 17.3850, lon: 78.4867},
-            'Shimla': {lat: 31.7771, lon: 77.1025},
-            'Srinagar': {lat: 34.0837, lon: 74.7973},
-            'Shillong': {lat: 25.5788, lon: 91.8933},
-            'Imphal': {lat: 24.8170, lon: 94.7885},
-            'Aizawl': {lat: 23.8103, lon: 92.9375},
-            'Agartala': {lat: 23.8138, lon: 91.2787},
-            'Kohima': {lat: 25.6114, lon: 94.1079},
-            'Gangtok': {lat: 27.5330, lon: 88.6109},
-            'Panaji': {lat: 15.2993, lon: 73.8243},
-            'Bhubaneswar': {lat: 20.2961, lon: 85.8245},
-            'Cuttack': {lat: 20.4625, lon: 85.8830},
-            'Raipur': {lat: 21.2514, lon: 81.6296},
-            'Durg': {lat: 21.1917, lon: 80.8667},
-            'Bilaspur': {lat: 22.0796, lon: 82.1581},
-            'Rourkela': {lat: 22.2504, lon: 84.8537},
-            'Dehradun': {lat: 30.2671, lon: 78.0092},
-            'Ghaziabad': {lat: 28.6692, lon: 77.4538},
-            'Meerut': {lat: 28.9845, lon: 77.7064},
-            'Agra': {lat: 27.1767, lon: 78.0081},
-            'Aligarh': {lat: 27.8974, lon: 77.8934}
-        };
-
         document.getElementById('recommendationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             document.getElementById('loadingSpinner').classList.add('show');
@@ -515,12 +410,8 @@
             try {
                 const state = document.getElementById('state').value || '';
                 const district = document.getElementById('district').value || '';
-                
-                // Get coordinates from district lookup, or use defaults
-                const coords = districtCoordinates[district] || {lat: 0, lon: 0};
-                const latitude = coords.lat;
-                const longitude = coords.lon;
-                
+                const latitude = parseFloat(document.getElementById('latitude').value) || 0;
+                const longitude = parseFloat(document.getElementById('longitude').value) || 0;
                 const soilTypeRaw = (document.getElementById('soilType').value || 'black').toLowerCase();
                 const riskToleranceRaw = document.getElementById('riskTolerance').value || 'Medium';
                 const farmSize = parseFloat(document.getElementById('farmSize').value) || 1;
@@ -546,21 +437,13 @@
 
                 debugLog('Fetching Weather...', {url: `/api/weather/${location.state}/${location.district}?lat=${location.latitude}&lon=${location.longitude}`});
                 const weatherResponse = await fetch(`/api/weather/${location.state}/${location.district}?lat=${location.latitude}&lon=${location.longitude}`);
-                if (!weatherResponse.ok) {
-                    const errorData = await weatherResponse.json().catch(() => ({}));
-                    debugLog('Weather API Error:', {status: weatherResponse.status, error: errorData});
-                    throw new Error(`Weather API failed (${weatherResponse.status}): ${errorData.detail || 'Unknown error'}`);
-                }
+                if (!weatherResponse.ok) throw new Error('Weather API failed');
                 const weatherData = await weatherResponse.json();
                 debugLog('Weather Received:', weatherData);
 
                 debugLog('Fetching Commodity Prices...', {});
                 const commodityResponse = await fetch(`/api/commodity-prices?state=${location.state}&district=${location.district}&lat=${location.latitude}&lon=${location.longitude}&crops=${selectedCrops.join(',')}`);
-                if (!commodityResponse.ok) {
-                    const errorData = await commodityResponse.json().catch(() => ({}));
-                    debugLog('Commodity API Error:', {status: commodityResponse.status, error: errorData});
-                    throw new Error(`Commodity API failed (${commodityResponse.status}): ${errorData.detail || 'Unknown error'}`);
-                }
+                if (!commodityResponse.ok) throw new Error('Commodity API failed');
                 const commodityData = await commodityResponse.json();
                 debugLog('Commodity Data:', commodityData);
 
@@ -602,127 +485,27 @@
         function displayResults(result) {
             const recContainer = document.getElementById('recommendationsContainer');
             recContainer.innerHTML = '';
-            
             if (result.recommendations && result.recommendations.length > 0) {
                 result.recommendations.forEach((rec, idx) => {
                     const card = document.createElement('div');
                     card.className = 'col-md-6 mb-3';
-                    card.innerHTML = `
-                        <div class="recommendation-card">
-                            <div class="d-flex align-items-start">
-                                <div class="recommendation-rank">#${idx+1}</div>
-                                <div class="flex-grow-1">
-                                    <div class="recommendation-title">${rec.crop_name}</div>
-                                    <div class="text-success"><strong>₹${Math.round(rec.market_price || 0)}/quintal</strong></div>
-                                </div>
-                            </div>
-                            
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <div class="detail-item">
-                                        <div class="detail-label">Confidence Score</div>
-                                        <div class="detail-value">${Math.round((rec.confidence_score || 0) * 100)}%</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="detail-item">
-                                        <div class="detail-label">Expected Yield</div>
-                                        <div class="detail-value">${rec.expected_yield ? rec.expected_yield.toFixed(1) + ' q/ha' : 'N/A'}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="detail-item mt-3">
-                                <div class="detail-label">Estimated Profit (per hectare)</div>
-                                <div class="detail-value text-success">₹${Math.round(rec.estimated_profit || 0)}</div>
-                            </div>
-                            
-                            <div class="mt-3 small" style="border-top: 1px solid #eee; padding-top: 0.75rem;">
-                                <div><strong>Season:</strong> ${rec.planting_season || 'N/A'}</div>
-                                <div><strong>Water Requirement:</strong> ${rec.water_requirement || 'N/A'}</div>
-                                <div><strong>Pest Risk:</strong> ${rec.pest_risk || 'N/A'}</div>
-                                <div><strong>Market Demand:</strong> ${rec.market_demand || 'N/A'}</div>
-                                <div><strong>Planting Time:</strong> ${rec.planting_time || 'N/A'}</div>
-                            </div>
-                        </div>
-                    `;
+                    card.innerHTML = `<div class="recommendation-card"><div class="d-flex"><div class="recommendation-rank">#${idx+1}</div><div><div class="recommendation-title">${rec.crop_name}</div><div class="text-success"><strong>₹${rec.market_price || 0}/q</strong></div></div></div><div class="row mt-3"><div class="col-6"><div class="detail-item"><div class="detail-label">Confidence</div><div class="detail-value">${Math.round((rec.confidence_score || 0) * 100)}%</div></div></div><div class="col-6"><div class="detail-item"><div class="detail-label">Yield</div><div class="detail-value">${rec.expected_yield || 'N/A'}</div></div></div></div><div class="detail-item mt-3"><div class="detail-value text-success">₹${rec.estimated_profit || 0}</div></div></div>`;
                     recContainer.appendChild(card);
                 });
-            } else {
-                recContainer.innerHTML = '<div class="alert alert-warning col-12">No crop recommendations available. Try adjusting your inputs.</div>';
             }
-            
-            // Display advice
             const adviceContainer = document.getElementById('adviceContainer');
-            adviceContainer.innerHTML = '';
-            
-            if (result.advice && result.advice.length > 0) {
-                result.advice.forEach(advice => {
-                    const urgencyColor = advice.urgency === 'High' ? 'danger' : advice.urgency === 'Medium' ? 'warning' : 'info';
-                    const card = document.createElement('div');
-                    card.className = 'col-md-6 mb-3';
-                    card.innerHTML = `
-                        <div class="card">
-                            <div class="card-header bg-${urgencyColor} text-white">
-                                <h6 class="mb-0">${advice.title || 'Agricultural Advice'}</h6>
-                                <small>Urgency: ${advice.urgency || 'N/A'}</small>
-                            </div>
-                            <div class="card-body">
-                                <p>${advice.description || 'No description available'}</p>
-                                <div style="border-top: 1px solid #ddd; padding-top: 0.5rem; margin-top: 0.5rem;">
-                                    <small class="text-muted">
-                                        <strong>Confidence:</strong> ${advice.confidence_score ? Math.round(advice.confidence_score * 100) : 'N/A'}%
-                                        | <strong>Time to implement:</strong> ${advice.implementation_time || 'N/A'}
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    adviceContainer.appendChild(card);
-                });
-            } else {
-                adviceContainer.innerHTML = '<div class="alert alert-info col-12">No specific agricultural advice available for your inputs.</div>';
-            }
-            
-            // Display market analysis
+            adviceContainer.innerHTML = (result.advice && result.advice.length > 0) ? result.advice.map(a => `<div class="col-md-6 mb-3"><div class="card"><div class="card-header bg-info text-white"><h6 class="mb-0">${a.title || 'Advice'}</h6></div><div class="card-body"><p>${a.description || 'N/A'}</p></div></div></div>`).join('') : '<div class="alert alert-info">No advice available</div>';
             const marketContainer = document.getElementById('marketAnalysisContainer');
-            marketContainer.innerHTML = '';
-            
-            if (result.market_analysis && Object.keys(result.market_analysis).length > 0) {
-                const analysis = result.market_analysis;
-                const trendHtml = analysis.trend_distribution ? `
-                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd;">
-                        <h6>Price Trend Distribution:</h6>
-                        <ul class="small">
-                            <li><strong>📈 Increasing:</strong> ${analysis.trend_distribution.increasing || 0} commodities</li>
-                            <li><strong>→ Stable:</strong> ${analysis.trend_distribution.stable || 0} commodities</li>
-                            <li><strong>📉 Decreasing:</strong> ${analysis.trend_distribution.decreasing || 0} commodities</li>
-                        </ul>
-                    </div>
-                ` : '';
-                
-                const marketCard = document.createElement('div');
-                marketCard.className = 'col-12';
-                marketCard.innerHTML = `
-                    <div class="card">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">Market Analysis</h5>
-                        </div>
-                        <div class="card-body">
-                            <h6>Market Sentiment: <span class="badge bg-success">${analysis.market_sentiment || 'N/A'}</span></h6>
-                            <p style="margin-top: 1rem;">${analysis.market_recommendation || 'No market recommendation available'}</p>
-                            ${trendHtml}
-                        </div>
-                    </div>
-                `;
-                marketContainer.appendChild(marketCard);
-            } else {
-                const noAnalysis = document.createElement('div');
-                noAnalysis.className = 'col-12';
-                noAnalysis.innerHTML = '<div class="alert alert-info">Market analysis not available for your selection. This may occur if commodity data is limited for the selected state/district or crops.</div>';
-                marketContainer.appendChild(noAnalysis);
-            }
+            marketContainer.innerHTML = result.market_analysis ? `<div class="col-12"><div class="card"><div class="card-body"><h5>${result.market_analysis.market_sentiment || 'N/A'}</h5><p>${result.market_analysis.market_recommendation || 'N/A'}</p></div></div></div>` : '<div class="alert alert-info">No analysis available</div>';
         }
     </script>
 </body>
 </html>
+'''
+
+# Write to file with UTF-8 encoding
+with open('templates/index.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("✅ index.html created successfully")
+print(f"📊 File size: {len(html_content)} bytes")
