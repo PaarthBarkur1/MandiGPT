@@ -21,9 +21,10 @@ try:
     import matplotlib.dates as mdates
     from matplotlib.figure import Figure
     MATPLOTLIB_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     MATPLOTLIB_AVAILABLE = False
-    logger.warning("Matplotlib not available - visualizations disabled")
+    Figure = None  # Define Figure as None if matplotlib is not available
+    logger.warning(f"Matplotlib not available - visualizations disabled: {e}")
 
 
 class AdvancedMarketAnalyzer:
@@ -364,7 +365,7 @@ class AdvancedMarketAnalyzer:
 
     def _generate_visualizations(self, prices: List[CommodityPrice], historical: Optional[List[Dict]]) -> Dict:
         """Generate base64-encoded chart visualizations including time series"""
-        if not self.matplotlib_available:
+        if not self.matplotlib_available or Figure is None:
             return {"message": "Visualizations require matplotlib library"}
 
         visualizations = {}
@@ -632,7 +633,7 @@ class AdvancedMarketAnalyzer:
         buf.seek(0)
         img_base64 = base64.b64encode(buf.read()).decode('utf-8')
         buf.close()
-        return f"data:image/png;base64,{img_base64}"
+        return img_base64
 
     def _generate_recommendations(self, prices: List[CommodityPrice], trends: Dict,
                                   volatility: Dict, risk: Dict) -> List[Dict]:

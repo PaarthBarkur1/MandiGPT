@@ -251,21 +251,30 @@ class FreeCommodityService:
 
                     logger.debug(
                         f"Fetching page {page + 1} from data.gov.in: commodity={commodity}, state={location.state}")
-                    response = await client.get(url, params=params)
-                    response.raise_for_status()
+                    try:
+                        response = await client.get(url, params=params)
+                        response.raise_for_status()
 
-                    data = response.json()
+                        data = response.json()
 
-                    if data.get('status') == 'ok' and data.get('records'):
-                        page_records = data['records']
-                        all_records.extend(page_records)
-                        logger.debug(
-                            f"Page {page + 1}: Got {len(page_records)} records")
+                        if data.get('status') == 'ok' and data.get('records'):
+                            page_records = data['records']
+                            all_records.extend(page_records)
+                            logger.debug(
+                                f"Page {page + 1}: Got {len(page_records)} records")
 
-                        # If we got fewer than limit, we've reached the end
-                        if len(page_records) < 1000:
+                            # If we got fewer than limit, we've reached the end
+                            if len(page_records) < 1000:
+                                break
+                        else:
                             break
-                    else:
+                    except (httpx.HTTPStatusError, httpx.RequestError) as e:
+                        logger.debug(
+                            f"data.gov.in API error on page {page + 1}: {e}")
+                        break
+                    except Exception as e:
+                        logger.debug(
+                            f"Unexpected error fetching data.gov.in page {page + 1}: {e}")
                         break
 
             records = all_records
@@ -500,7 +509,38 @@ class FreeCommodityService:
 
     def get_market_analysis(self, prices: List[CommodityPrice], historical_data: Optional[List[Dict]] = None) -> Dict:
         """Advanced market analysis using statistical methods - NO MOCK DATA"""
-        from advanced_market_analysis import AdvancedMarketAnalyzer
+        try:
+            from advanced_market_analysis import AdvancedMarketAnalyzer
 
-        analyzer = AdvancedMarketAnalyzer()
-        return analyzer.analyze_market(prices, historical_data)
+            analyzer = AdvancedMarketAnalyzer()
+            return analyzer.analyze_market(prices, historical_data)
+        except ImportError as e:
+            logger.error(f"Failed to import AdvancedMarketAnalyzer: {e}")
+            # Return basic analysis if advanced analyzer fails
+            return {
+                "summary": {
+                    "total_commodities": len(prices),
+                    "data_source": "Basic Analysis",
+                    "analysis_timestamp": datetime.now().isoformat(),
+                    "error": "Advanced visualization not available"
+                },
+                "descriptive_statistics": {},
+                "trend_analysis": {},
+                "volatility_metrics": {},
+                "visualizations": {}
+            }
+        except Exception as e:
+            logger.error(f"Error in market analysis: {e}", exc_info=True)
+            # Return basic analysis if advanced analyzer fails
+            return {
+                "summary": {
+                    "total_commodities": len(prices),
+                    "data_source": "Basic Analysis",
+                    "analysis_timestamp": datetime.now().isoformat(),
+                    "error": str(e)
+                },
+                "descriptive_statistics": {},
+                "trend_analysis": {},
+                "volatility_metrics": {},
+                "visualizations": {}
+            }

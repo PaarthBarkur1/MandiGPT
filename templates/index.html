@@ -690,27 +690,120 @@
             
             if (result.market_analysis && Object.keys(result.market_analysis).length > 0) {
                 const analysis = result.market_analysis;
-                const trendHtml = analysis.trend_distribution ? `
-                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd;">
-                        <h6>Price Trend Distribution:</h6>
-                        <ul class="small">
-                            <li><strong>📈 Increasing:</strong> ${analysis.trend_distribution.increasing || 0} commodities</li>
-                            <li><strong>→ Stable:</strong> ${analysis.trend_distribution.stable || 0} commodities</li>
-                            <li><strong>📉 Decreasing:</strong> ${analysis.trend_distribution.decreasing || 0} commodities</li>
-                        </ul>
+                debugLog('Market Analysis Structure:', analysis);
+                
+                // Build statistics section
+                const stats = analysis.descriptive_statistics || {};
+                const statsHtml = stats.mean ? `
+                    <div style="margin-top: 1.5rem; padding: 1rem; background-color: #f8f9fa; border-radius: 8px;">
+                        <h6>📊 Price Statistics</h6>
+                        <div class="row small mt-2">
+                            <div class="col-md-3">
+                                <div><strong>Average:</strong> ₹${stats.mean ? stats.mean.toFixed(0) : 'N/A'}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div><strong>Median:</strong> ₹${stats.median ? stats.median.toFixed(0) : 'N/A'}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div><strong>Std Dev:</strong> ₹${stats.standard_deviation ? stats.standard_deviation.toFixed(0) : 'N/A'}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div><strong>Range:</strong> ₹${stats.min && stats.max ? (stats.max - stats.min).toFixed(0) : 'N/A'}</div>
+                            </div>
+                        </div>
                     </div>
                 ` : '';
+                
+                // Build visualizations grid
+                const visualizations = analysis.visualizations || {};
+                let visualizationsHtml = '';
+                
+                if (Object.keys(visualizations).length > 0) {
+                    visualizationsHtml = '<div style="margin-top: 1.5rem;"><h6>📈 Market Visualizations</h6><div class="row mt-3">';
+                    
+                    for (const [vizName, vizData] of Object.entries(visualizations)) {
+                        let imageSrc = '';
+                        
+                        // Handle different data formats
+                        if (typeof vizData === 'string') {
+                            // Could be base64 string or full data URI
+                            if (vizData.includes('data:image')) {
+                                imageSrc = vizData;
+                            } else if (vizData.length > 100) {
+                                // Likely base64 encoded image
+                                imageSrc = `data:image/png;base64,${vizData}`;
+                            }
+                        } else if (vizData && typeof vizData === 'object' && vizData.image) {
+                            // Object format
+                            imageSrc = vizData.image.includes('data:image') ? vizData.image : `data:image/png;base64,${vizData.image}`;
+                        }
+                        
+                        if (imageSrc) {
+                            visualizationsHtml += `
+                                <div class="col-lg-6 mb-4">
+                                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 0.5rem; background: white; overflow: hidden;">
+                                        <small class="text-muted d-block mb-2" style="padding: 0 0.5rem;"><strong>${vizName.replace(/_/g, ' ').toUpperCase()}</strong></small>
+                                        <img src="${imageSrc}" alt="${vizName}" style="width: 100%; height: auto; display: block;" onerror="this.onerror=null; this.style.display='none'; this.previousElementSibling.innerHTML='<div style=\"padding: 1rem; color: #856404; background-color: #fff3cd; border-radius: 4px; font-size: 0.85rem; margin: 0.5rem;\">Chart failed to load</div>';">
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                    visualizationsHtml += '</div></div>';
+                }
+                
+                // Build market sentiment
+                const recommendations = analysis.recommendations || [];
+                const trendAnalysis = analysis.trend_analysis || {};
+                
+                // Determine market sentiment based on trend score and volatility
+                let marketSentiment = 'Neutral';
+                let marketRecommendation = 'Monitor current market conditions';
+                
+                if (Array.isArray(recommendations) && recommendations.length > 0) {
+                    // Use first recommendation for sentiment
+                    const firstRec = recommendations[0];
+                    if (firstRec.type === 'High-Value Opportunity') {
+                        marketSentiment = 'Bullish';
+                        marketRecommendation = firstRec.message;
+                    } else if (firstRec.type === 'Risk Management') {
+                        marketSentiment = 'Bearish';
+                        marketRecommendation = firstRec.message;
+                    } else if (firstRec.type === 'Market Timing') {
+                        marketSentiment = 'Strong Uptrend';
+                        marketRecommendation = firstRec.message;
+                    }
+                } else if (trendAnalysis.trend_score > 0.5) {
+                    marketSentiment = 'Bullish';
+                    marketRecommendation = 'Positive market trend detected';
+                } else if (trendAnalysis.trend_score < -0.5) {
+                    marketSentiment = 'Bearish';
+                    marketRecommendation = 'Negative market trend detected';
+                }
+                
+                const trendHtml = `
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd;">
+                        <h6>📊 Trend Distribution:</h6>
+                        <ul class="small">
+                            <li><strong>📈 Increasing:</strong> ${trendAnalysis.distribution?.increasing || 0} commodities</li>
+                            <li><strong>→ Stable:</strong> ${trendAnalysis.distribution?.stable || 0} commodities</li>
+                            <li><strong>📉 Decreasing:</strong> ${trendAnalysis.distribution?.decreasing || 0} commodities</li>
+                        </ul>
+                    </div>
+                `;
                 
                 const marketCard = document.createElement('div');
                 marketCard.className = 'col-12';
                 marketCard.innerHTML = `
                     <div class="card">
                         <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">Market Analysis</h5>
+                            <h5 class="mb-0">Market Analysis & Visualizations</h5>
                         </div>
                         <div class="card-body">
-                            <h6>Market Sentiment: <span class="badge bg-success">${analysis.market_sentiment || 'N/A'}</span></h6>
-                            <p style="margin-top: 1rem;">${analysis.market_recommendation || 'No market recommendation available'}</p>
+                            <h6>Market Sentiment: <span class="badge bg-success">${marketSentiment}</span></h6>
+                            <p style="margin-top: 1rem;"><strong>Recommendation:</strong> ${marketRecommendation}</p>
+                            ${statsHtml}
+                            ${visualizationsHtml}
                             ${trendHtml}
                         </div>
                     </div>

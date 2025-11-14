@@ -340,7 +340,7 @@ async def get_commodity_prices(
         logger.error(
             f"Error fetching commodity prices: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail=f"Failed to fetch commodity prices: {str(e)}")
+            status_code=500, detail=f"Commodity service error: {type(e).__name__}: Please check server logs for details")
 
 
 @app.get("/api/crop-info/{crop_name}")
